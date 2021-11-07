@@ -4,11 +4,6 @@ from keep_alive import keep_alive
 import discord
 from discord.ext.commands import Bot
 
-#remove these when migrating to repl.it 
-os.environ["mongodb_url"] = "mongodb+srv://Gordon_Z:Qwertyo123@cluster0.1991g.mongodb.net/discord?retryWrites=true&w=majority"
-os.environ["bot_token"] = "NzI0NzQ4NTgwNjM1NTQxNTk3.XvEstg.N_tZ-m3MMppAxpz_obfHQIXgxFk"
-os.environ["prefix"] = "m!"
-
 intents = discord.Intents.default()
 
 bot = Bot(command_prefix=os.getenv("prefix"))
