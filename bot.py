@@ -23,6 +23,6 @@ if __name__ == "__main__":
 @bot.event
 async def on_command_error(context, error):
     raise error
-
-# keep_alive()
+    
+keep_alive()
 bot.run(os.getenv("bot_token"))
