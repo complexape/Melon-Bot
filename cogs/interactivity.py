@@ -41,7 +41,7 @@ class Interactivity(commands.Cog, name="interactivity"):
         embed = discord.Embed(title=f"Download links for: {r['title']}")
         embed.set_thumbnail(url=r["thumbnail"])
         embed.add_field(name=f"Download MP4:", value=f"[link here]({urls[-1]})")
-        embed.add_field(name=f"Download MP3", value=f"[link here]({urls[2]})")
+        embed.add_field(name=f"Download MP3", value=f"[link here]({urls[3]})")
         await ctx.author.send(embed=embed)
 
 
