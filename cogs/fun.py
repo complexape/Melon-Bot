@@ -24,7 +24,7 @@ class Fun(commands.Cog, name="fun"):
 
         asset = user.avatar_url_as(size=128)
         data = BytesIO(await asset.read())
-        final_path = f'/app/temp/ohmygif{user.id}.gif'
+        final_path = f'temp/ohmygif{user.id}.gif'
         animated_gif = Image.open("media/ohmygoodness.gif")
         img = Image.open(data).convert("RGBA").resize((220, 220), Image.ANTIALIAS)
 
