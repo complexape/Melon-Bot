@@ -1,5 +1,4 @@
 import os
-from keep_alive import keep_alive
 
 import discord
 from discord.ext.commands import Bot
