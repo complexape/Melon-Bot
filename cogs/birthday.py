@@ -1,16 +1,18 @@
 import os
 from datetime import datetime, timedelta
 
+import pytz
 import discord
 from discord.ext import commands
 from pymongo import MongoClient
 
-from helpers.db_manager import *
-from constants import DBNAME
+from helpers.db_manager import check_guild_member, background_task
+from constants import DBNAME, TIMEZONE
 
 
 db_client = MongoClient(os.getenv("mongodb_url"))
 db = db_client[DBNAME]
+tz = pytz.timezone(TIMEZONE)
 
 class BDayTracker(commands.Cog, name="BDay tracker"):
     def __init__(self, bot):
@@ -20,7 +22,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def on_ready(self):
         self.bot.loop.create_task(background_task())  
         
-    @commands.command()
+    @commands.command(description="Let the bot know when your birthday is for a special message on your birthday...")
     async def setbday(self, ctx):
         prompt = await ctx.send("Please respond with your birthday in MM/DD/YYYY format (ex. 1/1/1999)")
 
@@ -53,7 +55,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
         await ctx.send("Success!")
         
 
-    @commands.command()
+    @commands.command(description="Displays upcoming birthdays within the next 2 weeks or less")
     async def upcomingbdays(self, ctx):
         collection = db[str(ctx.guild.id)]
         birthdays = list(collection.find({}, {"name": 1,"birthday":1}))

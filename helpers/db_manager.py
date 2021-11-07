@@ -52,7 +52,7 @@ async def check_guild_member(member, guildid = None):
 
 async def user_leave(user, collection):
   now = datetime.now(tz).replace(tzinfo=None)
-  t_delta = now-datetime.strptime(user["lastjoined"], "%Y-%m-%d %H:%M:%S.%f")
+  t_delta = now-datetime.strptime(collection.find_one({"_id": user["_id"]})["lastjoined"], "%Y-%m-%d %H:%M:%S.%f")
 
   # returns if user has yet to join 
   if collection.find_one({"_id": user["_id"]})["lastjoined"] == "": return

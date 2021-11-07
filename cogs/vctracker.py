@@ -1,22 +1,24 @@
 import os
 from datetime import datetime
 
+import pytz
 import discord
 from discord.ext import commands
 from pymongo import MongoClient
 
-from helpers.db_manager import *
-from constants import DBNAME
+from helpers.db_manager import format_dtstring, check_guild_member, user_leave 
+from constants import DBNAME, TIMEZONE
 
 
 db_client = MongoClient(os.getenv("mongodb_url"))
 db = db_client[DBNAME]
+tz = pytz.timezone(TIMEZONE)
 
 class VCTracker(commands.Cog, name="VC tracker"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(description= "A leaderboard of the top members in your guild in terms of total time in vc OR longest periods in vc", usage = '["long"] (to display rank based on longest periods in vc)')
     async def vcrank(self, ctx, arg = None):
         try:
             collection = db[str(ctx.guild.id)]
@@ -41,8 +43,8 @@ class VCTracker(commands.Cog, name="VC tracker"):
         for position, user in enumerate(sorted_users):
             if position > 10: break
 
-            user = await self.bot.fetch_user(user["_id"])
-            name = user.display_name
+            this_user = await self.bot.fetch_user(user["_id"])
+            name = this_user.display_name
             if arg == "long":
                 time = user["longestvctime"]
             else:
@@ -52,14 +54,14 @@ class VCTracker(commands.Cog, name="VC tracker"):
             if time == "1900-01-01 00:00:00.01": continue
 
             embed.add_field(
-                name=f"{str(position)}. {name}", 
+                name=f"{str(position+1)}. {name}", 
                 value= await format_dtstring(time),
                 inline=False
             )
             position +=1
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(description="shows your vc data")
     async def stats(self, ctx):
         collection = db[str(ctx.guild.id)]
         if not await check_guild_member(ctx.author): 
@@ -103,7 +105,9 @@ class VCTracker(commands.Cog, name="VC tracker"):
         elif not after.channel and before.channel and not before.afk:
             print(f"{member.name} leaves {member.guild.name}")
             await check_guild_member(member)
-            await user_leave(member, db[str(member.guild.id)])
+            collection = db[str(member.guild.id)]
+            user = collection.find_one({"_id": member.id})
+            await user_leave(user, db[str(member.guild.id)])
 
     # automatically logs users' vc times to prepare for downtime
     @commands.command(hidden = True)
