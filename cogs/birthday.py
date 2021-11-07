@@ -29,7 +29,6 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
         date_string = await self.bot.wait_for('message', check=check, timeout=30)
         await date_string.delete()
         await prompt.delete()
-
         try: #verfies user has sent a date
             birthday_dt = datetime.strptime(date_string.content, '%m/%d/%Y')
             if datetime.now(tz).replace(tzinfo=None) < birthday_dt:
