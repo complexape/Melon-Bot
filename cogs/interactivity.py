@@ -5,40 +5,41 @@ from discord_slash.utils.manage_commands import create_option, create_choice
 import youtube_dl
 from youtube_dl.utils import DownloadError
 
-test_guilds = [779451772573450281]
-
 class Interactivity(commands.Cog, name="interactivity"):
     def __init__(self, bot):
         self.bot = bot
         self.ydl = youtube_dl.YoutubeDL()
     
-    @commands.command(description="helps you set up a poll")
-    async def vote(self, ctx):
-        def check(msg):
-            return msg.author.id == ctx.author.id and msg.channel.id == ctx.channel.id
-        def check_img(msg):
-            return check and 'https://cdn.discordapp.com/attachments/' in msg.content or msg.content == "NO"
-
-        q1 = await ctx.send("What is your voting question/statement?: ")
-        title = await self.bot.wait_for('message', check=check, timeout=300)
-        q2 = await ctx.send("What's your image (discord urls only)? (type 'NO' for none): ")
-        img = await self.bot.wait_for('message', check=check_img, timeout=300)
-
+    @cog_ext.cog_slash(
+        name="poll",
+        description="Create a poll embed for members to vote for in this server.",
+        options=[
+            create_option(name="title", description="Your poll embed's title.", option_type=3, required=True),
+            create_option(name="channel", description="The channel you want your poll embed to be posted in.",option_type=7, required=True),
+            create_option(name="image", description="A URL for an image.", option_type=3, required=False)
+        ])
+    async def _poll(self, ctx: SlashContext, title: str, channel: discord.channel, image: str = None):
         embed = discord.Embed(
-            title=title.content, 
+            title=title, 
             color=0xff0066,
         )
-        if img.content != "NO": embed.set_image(url=img.content)
-    
-        await ctx.channel.delete_messages([q1, q2, title, img])
-        message = await ctx.send(embed=embed)
-        await message.add_reaction("👍")
-        await message.add_reaction("👎")
+        
+        try:
+            embed.set_image(url=image)
+            if isinstance(channel, discord.TextChannel):
+                message = await channel.send(embed=embed)
+                await message.add_reaction("👍")
+                await message.add_reaction("👎")
+                await ctx.reply("Success!", hidden=True)
+            else:
+                await ctx.reply("Your channel must be a text channel.", hidden=True)
+        except discord.errors.HTTPException:
+            await ctx.reply(f"'{image}' is not a valid URL.", hidden=True)
+            return
 
     @cog_ext.cog_slash(
         name="ytlink",
         description="Sends you links to easily download your favourite YouTube videos. (audio and MP4)",
-        guild_ids=test_guilds,
         options=[
             create_option(name="link", description="A YouTube video URL.", option_type=3, required=True),
         ])
@@ -47,7 +48,7 @@ class Interactivity(commands.Cog, name="interactivity"):
             try:
                 r = self.ydl.extract_info(link, download=False)
             except DownloadError:
-                await ctx.reply(f'"{link}" is not a valid URL.')
+                await ctx.reply(f'"{link}" is not a valid URL.', hidden=True)
                 return
             urls = [format['url'] for format in r['formats']]
             embed = discord.Embed(title=f"Download links for: {r['title']}")
@@ -56,7 +57,7 @@ class Interactivity(commands.Cog, name="interactivity"):
             embed.add_field(name=f"Download Audio:", value=f"[link here]({urls[3]})")
             await ctx.author.send(embed=embed)
         else:
-            await ctx.reply("Playlists not allowed.")
+            await ctx.reply("Playlists are not allowed.", hidden=True)
 
 def setup(bot):
     bot.add_cog(Interactivity(bot))

@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import pytz
 import discord
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext, manage_commands
+from discord_slash.utils.manage_commands import create_option, create_choice
 from pymongo import MongoClient
 
 from helpers.db_manager import check_guild_member, background_task
@@ -14,6 +16,8 @@ db_client = MongoClient(os.getenv("mongodb_url"))
 db = db_client[DBNAME]
 tz = pytz.timezone(TIMEZONE)
 
+test_guilds = [779451772573450281, 620056088863178752]
+
 class BDayTracker(commands.Cog, name="BDay tracker"):
     def __init__(self, bot):
         self.bot = bot
@@ -22,59 +26,55 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def on_ready(self):
         self.bot.loop.create_task(background_task())  
         
-    @commands.command(description="Let the bot know when your birthday is for a special message on your birthday...")
-    async def setbday(self, ctx):
-        prompt = await ctx.send("Please respond with your birthday in MM/DD/YYYY format (ex. 1/1/1999)")
-
-        def check(msg):
-            return msg.author.id == ctx.author.id and msg.channel.id == ctx.channel.id
-        date_string = await self.bot.wait_for('message', check=check, timeout=30)
-        await date_string.delete()
-        await prompt.delete()
+    @cog_ext.cog_slash(
+        name="setbday",
+        description="Set the date of your birthday for a special message on that day. (Note: CANNOT be changed again)",
+        guild_ids=test_guilds,
+        options=[
+            create_option(name="year", description="The year of your birthday.",option_type=4, required=True),
+            create_option(name="month", description="The month of your birthday.",option_type=4, required=True),
+            create_option(name="day", description="The day of your birthday.",option_type=4, required=True)
+        ])
+    async def _setbday(self, ctx: SlashContext, year: int, month: int, day: int):
+        date = f"{month}/{day}/{year}"
         try: #verfies user has sent a date
-            birthday_dt = datetime.strptime(date_string.content, '%m/%d/%Y')
+            birthday_dt = datetime.strptime(date, '%m/%d/%Y')
             if datetime.now(tz).replace(tzinfo=None) < birthday_dt:
                 raise ValueError
         except ValueError:
-            await ctx.send("Invalid. (date must be in the past and in MM/DD/YYYY format)")
-
+            await ctx.reply(f"'{date}' is not a valid date.", hidden=True)
+            return
         collection = db[str(ctx.guild.id)]
         await check_guild_member(ctx.author)
-        if collection.find_one({"_id": ctx.author.id})["birthday"] != "":
-            await ctx.send("You've already provided a birthday.")
-            return
+        if collection.find_one({"_id": ctx.author.id})["birthday"] == "":
+            collection.update_one({"_id": ctx.author.id}, {"$set":{"birthday": date}}) 
+            await ctx.reply(f"Your birthday has successfully been set to: {date}", hidden=True)
+        else: 
+            await ctx.reply("You've already provided me a birthday.", hidden=True)   
 
-        warning = await ctx.send(f"Respond with 'CONFIRM' to confirm your birthday is on {date_string.content}. (you won't be able to change it ever again)")
-        msg = await self.bot.wait_for('message', check=check, timeout=30)
-        await msg.delete()
-        await warning.delete()
-        if msg.content != "CONFIRM":
-            await ctx.send("Cancelled.")
-            return
-        collection.update_one({"_id": ctx.author.id}, {"$set":{"birthday": date_string.content}}) 
-        await ctx.send("Success!")
-        
-
-    @commands.command(description="Displays upcoming birthdays within the next 2 weeks or less")
-    async def upcomingbdays(self, ctx):
+    @cog_ext.cog_slash(
+        name="upcomingbdays",
+        guild_ids=test_guilds, 
+        description="Displays known upcoming birthdays within the next two weeks."
+    )
+    async def _upcomingbdays(self, ctx: SlashContext):
         collection = db[str(ctx.guild.id)]
         birthdays = list(collection.find({}, {"name": 1,"birthday":1}))
+
         description = ""
         for user in birthdays:
-            if user["birthday"] == "":
-                continue
-            birthday = datetime.strptime(user["birthday"], '%m/%d/%Y')
-            days_away = birthday.replace(year=2000) - datetime.today().replace(year=2000)
+            if user["birthday"] != "":
+                birthday = datetime.strptime(user["birthday"], '%m/%d/%Y')
+                days_away = birthday.replace(year=2000) - datetime.today().replace(year=2000)
 
-            if days_away < timedelta(weeks=2) and days_away > timedelta(days=0):
-                name = user["name"]
-                description += f"\n**{name}** (on **{user['birthday']}**)"
-            if description == "": description = "No upcoming birthdays :/"
-            
-        await ctx.send(embed=discord.Embed(
-            title=f"Birthdays coming in 2 Weeks or Less:", 
+                # birthday must be between the range of now and two weeks
+                if days_away < timedelta(weeks=2) and days_away > timedelta(days=0):
+                    description += f"\n- **{user['name']}**'s birthday is on **{user['birthday']}**)"
+
+        await ctx.reply(embed=discord.Embed(
+            title=f":birthday: Upcoming Birthdays in '{ctx.guild.name}' :birthday:", 
             color=0xf02dd0,
-            description=description
+            description="No upcoming birthdays :/" if description == "" else description
         )) 
 
 def setup(bot):

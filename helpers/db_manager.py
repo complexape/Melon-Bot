@@ -16,39 +16,39 @@ dt_offset = datetime(1900, 1, 1)
 tz = pytz.timezone(TIMEZONE)
 
 async def format_dtstring(str):
-    date_time = datetime.strptime(str,"%Y-%m-%d %H:%M:%S.%f")
-    delta_t = date_time - dt_offset
-    s = delta_t.total_seconds()
-    return "`{}h {}m {}s`".format(
-        int(s //3600), 
-        int((s % 3600) // 60), 
-        int(s % 60)
-    )
+  delta_t = datetime.strptime(str,"%Y-%m-%d %H:%M:%S.%f")- dt_offset
+  s = delta_t.total_seconds()
+  return "`{}h {}m {}s`".format(
+    int(s //3600), 
+    int((s % 3600) // 60), 
+    int(s % 60)
+  )
 
 # returns true if user's profile and guild already exist
 async def check_guild_member(member, guildid = None):
-    if not guildid: guildid = member.guild.id 
-    guild_collection = None
-    if str(guildid) in db.list_collection_names():
-        guild_collection = db[str(guildid)]
-        if guild_collection.count_documents({ '_id': member.id }, limit = 1) != 0:
-            return True
-    else:
-        guild_collection = db.create_collection(str(guildid))
-        print("creating guild collection")
-    if not guild_collection.count_documents({ '_id': member.id }, limit = 1) != 0:  
-        print("creating user post")
-        post = {
-            "_id": member.id, 
-            "name": member.name, 
-            "totalvctime": "1900-01-01 00:00:00.01",
-            "longestvctime": "1900-01-01 00:00:00.01",
-            "lastjoined": "",
-            "firstjoined": "",
-            "birthday": ""
-        }
-        guild_collection.insert_one(post)
-    return False
+  if not guildid: 
+    guildid = member.guild.id 
+    
+  guild_collection = None
+  if str(guildid) in db.list_collection_names():
+    guild_collection = db[str(guildid)]
+    return guild_collection.count_documents({ '_id': member.id }, limit = 1) != 0
+  else:
+    guild_collection = db.create_collection(str(guildid))
+    print("creating guild collection")
+  if guild_collection.count_documents({ '_id': member.id }, limit = 1) == 0:  
+    print("creating user post")
+    post = {
+      "_id": member.id, 
+      "name": member.name, 
+      "totalvctime": "1900-01-01 00:00:00.01",
+      "longestvctime": "1900-01-01 00:00:00.01",
+      "lastjoined": "",
+      "firstjoined": "",
+      "birthday": ""
+    }
+    guild_collection.insert_one(post)
+  return False
 
 async def user_leave(user, collection):
   now = datetime.now(tz).replace(tzinfo=None)
@@ -57,11 +57,12 @@ async def user_leave(user, collection):
   # returns if user has yet to join 
   if collection.find_one({"_id": user["_id"]})["lastjoined"] == "": return
 
-  # updates longest vc time 
+  # updates longest vc time
   if t_delta+dt_offset > datetime.strptime(user["longestvctime"], "%Y-%m-%d %H:%M:%S.%f"):
     collection.update_one({ "_id": user["_id"]}, { "$set": { "longestvctime":str(t_delta+dt_offset) } })
 
   # adds t_delta to total and resets last joined
+  print(f"adding {t_delta} to {user['name']}'s total vc time...")
   collection.update_one({ "_id": user["_id"]}, { "$set": { "totalvctime": str(datetime.strptime(user["totalvctime"], "%Y-%m-%d %H:%M:%S.%f") + t_delta) } })
   collection.update_one({ "_id": user["_id"]}, { "$set": { "lastjoined": "" } })
 
