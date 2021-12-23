@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext, manage_commands
-from discord_slash.utils.manage_commands import create_option, create_choice
+from discord_slash import cog_ext, SlashContext
+from discord_slash.utils.manage_commands import create_option
 import youtube_dl
 from youtube_dl.utils import DownloadError
 

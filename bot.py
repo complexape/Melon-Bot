@@ -1,12 +1,8 @@
-from collections import _OrderedDictValuesView
 import os
 
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand
-
-from pymongo import MongoClient
-from constants import DBNAME
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=os.getenv("prefix"))
