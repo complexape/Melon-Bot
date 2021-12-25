@@ -1,14 +1,14 @@
 from datetime import datetime
 
-import discord
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
-from helpers.guild import DBGuild
-from helpers.member import DBMember
+from helpers.db_models import DBGuild, DBMember
 from utils.mongo import background_task
+from utils.displays import str_to_date, build_embed
 from constants import TZ
+
 
 class BDayTracker(commands.Cog, name="BDay tracker"):
     def __init__(self, bot):
@@ -29,7 +29,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def _setbday(self, ctx: SlashContext, year: int, month: int, day: int):
         date = f"{month}/{day}/{year}"
         try: #verfies user has sent a date
-            birthday_dt = datetime.strptime(date, '%m/%d/%Y')
+            birthday_dt = str_to_date(date)
 
             # date can't be in the future
             if datetime.now(TZ).replace(tzinfo=None) < birthday_dt:
@@ -40,12 +40,13 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
 
         db_guild = DBGuild(ctx.guild_id)
         db_member = DBMember(ctx.author_id, ctx.author.name, db_guild.collection)
-        
-        if db_member.get_value("birthday") == "":
+
+        bday = db_member.get_value("birthday")
+        if bday == "":
             db_member.update_field("birthday", date)
             await ctx.reply(f"Your birthday has successfully been set to: {date}", hidden=True)
         else: 
-            await ctx.reply("You've already provided me a birthday.", hidden=True)   
+            await ctx.reply(f"Your birthday has already been set to: **{bday}**", hidden=True)   
 
     @cog_ext.cog_slash(
         name="upcomingbdays", 
@@ -54,6 +55,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def _upcomingbdays(self, ctx: SlashContext):
         db_guild = DBGuild(ctx.guild_id)
         members = db_guild.get_sorted_values("birthday")
+
         description = ""
         for member in members:
             date = member["birthday"]
@@ -61,15 +63,14 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
                 birthday = datetime.strptime(date, '%m/%d/%Y')
                 now = datetime.now(TZ).replace(tzinfo=None)
                 bday = datetime(now.year, birthday.month, birthday.day)
-                days_away = (bday - now.today()).days + 1
+                days_away = (bday - now.today()).days-1
                 days_range = 14
                 if days_away in range(-364, -364 + days_range) or days_away in range(days_range):
                     description += f"\n- **{member['name']}**'s birthday is on **{date}**)"
 
-        await ctx.reply(embed=discord.Embed(
+        await ctx.reply(embed=build_embed(
             title=f":birthday: Upcoming Birthdays in '{ctx.guild.name}' :birthday:", 
-            color=0xf02dd0,
-            description="No upcoming birthdays :/" if description == "" else description
+            desc=description
         ))
 
 def setup(bot):

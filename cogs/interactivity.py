@@ -5,6 +5,9 @@ from discord_slash.utils.manage_commands import create_option
 import youtube_dl
 from youtube_dl.utils import DownloadError
 
+from utils.displays import build_embed
+
+
 class Interactivity(commands.Cog, name="interactivity"):
     def __init__(self, bot):
         self.bot = bot
@@ -19,11 +22,7 @@ class Interactivity(commands.Cog, name="interactivity"):
             create_option(name="image", description="A URL for an image.", option_type=3, required=False)
         ])
     async def _poll(self, ctx: SlashContext, title: str, channel: discord.channel, image: str = None):
-        embed = discord.Embed(
-            title=title, 
-            color=0xff0066,
-        )
-        
+        embed = build_embed(title=title)
         try:
             embed.set_image(url=image)
             if isinstance(channel, discord.TextChannel):
@@ -48,11 +47,11 @@ class Interactivity(commands.Cog, name="interactivity"):
             try:
                 r = self.ydl.extract_info(link, download=False)
             except DownloadError:
-                await ctx.reply(f'"{link}" is not a valid URL.', hidden=True)
+                await ctx.reply(f'"{link}" is not valid.', hidden=True)
                 return
+
             urls = [format['url'] for format in r['formats']]
-            embed = discord.Embed(title=f"Download links for: {r['title']}")
-            embed.set_thumbnail(url=r["thumbnail"])
+            embed = build_embed(title=f"Download links for: {r['title']}", thumb_url=r["thumbnail"])
             embed.add_field(name=f"Download MP4:", value=f"[link here]({urls[-1]})")
             embed.add_field(name=f"Download Audio:", value=f"[link here]({urls[3]})")
             await ctx.author.send(embed=embed)

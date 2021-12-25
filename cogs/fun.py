@@ -10,6 +10,9 @@ from discord_slash.utils.manage_commands import create_option
 from PIL import Image, ImageSequence
 import requests
 
+from utils.displays import build_embed
+
+
 class Fun(commands.Cog, name="fun"):
     def __init__(self, bot):
         self.bot = bot
@@ -22,9 +25,10 @@ class Fun(commands.Cog, name="fun"):
         ])
     async def _highfive(self, ctx: SlashContext, user: discord.User):
         response = requests.get("https://api.waifu.pics/sfw/highfive")
-        embed = discord.Embed(title=f"- **{ctx.author.name} high fives {user.display_name}**", color=0x36b8c9)
-        embed.set_image(url=response.json()["url"])
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=build_embed(
+            title=f"- **{ctx.author.name} high fives {user.display_name}**",
+            img_url=response.json()["url"]
+        ))
 
     @cog_ext.cog_slash(
         name="bonk",
@@ -34,9 +38,10 @@ class Fun(commands.Cog, name="fun"):
         ])
     async def _bonk(self, ctx: SlashContext, user: discord.User):
         response = requests.get("https://api.waifu.pics/sfw/bonk")
-        embed = discord.Embed(title=f"- **{ctx.author.name} bonks {user.display_name}**", color=0x8e36c9)
-        embed.set_image(url=response.json()["url"])
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=build_embed(
+            title=f"- **{ctx.author.name} bonks {user.display_name}**",
+            img_url=response.json()["url"]
+        ))
     
     @cog_ext.cog_slash(
         name="slap",
@@ -46,9 +51,10 @@ class Fun(commands.Cog, name="fun"):
         ])
     async def _slap(self, ctx: SlashContext, user: discord.User):
         response = requests.get("https://api.waifu.pics/sfw/slap")
-        embed = discord.Embed(title=f"- **{ctx.author.name} slaps {user.display_name}**", color=0xc93636)
-        embed.set_image(url=response.json()["url"])
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=build_embed(
+            title=f"- **{ctx.author.name} slaps {user.display_name}**",
+            img_url=response.json()["url"]
+        ))
     
     @cog_ext.cog_slash(
         name="hug",
@@ -57,13 +63,12 @@ class Fun(commands.Cog, name="fun"):
             create_option(name="user", description="The target user.", option_type=6, required=True),
         ])
     async def _hug(self, ctx: SlashContext, user: discord.User):
-        if random.randrange(0, 2) == 0:
-            response = requests.get("https://api.waifu.pics/sfw/glomp")
-        else:
-            response = requests.get("https://api.waifu.pics/sfw/hug")
-        embed = discord.Embed(title=f"- **{ctx.author.name} hugs {user.display_name}**", color=0xc93684)
-        embed.set_image(url=response.json()["url"])
-        await ctx.reply(embed=embed)
+        responses = [requests.get("https://api.waifu.pics/sfw/glomp"), requests.get("https://api.waifu.pics/sfw/hug")]
+        response = responses[random.randrange(0, 2)]
+        await ctx.reply(embed=build_embed(
+            title=f"- **{ctx.author.name} hugs {user.display_name}**",
+            img_url=response.json()["url"]
+        ))
     
     @cog_ext.cog_slash(
         name="wave",
@@ -73,9 +78,10 @@ class Fun(commands.Cog, name="fun"):
         ])
     async def _wave(self, ctx: SlashContext, user: discord.User):
         response = requests.get("https://api.waifu.pics/sfw/wave")
-        embed = discord.Embed(title=f"- **{ctx.author.name} waves at {user.display_name}**", color=0x38c936)
-        embed.set_image(url=response.json()["url"])
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=build_embed(
+            title=f"- **{ctx.author.name} waves at {user.display_name}**",
+            img_url=response.json()["url"]
+        ))
 
     @cog_ext.cog_slash(
         name="ohmy",

@@ -14,6 +14,8 @@ async def on_command_error(context, error):
 
 @bot.event
 async def on_ready():
+    if not hasattr(bot, 'AppInfo'):
+        bot.AppInfo = await bot.application_info()
     print(f'{bot.user} has logged in.')
 
 if __name__ == "__main__":
