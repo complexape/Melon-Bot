@@ -1,4 +1,3 @@
-import bson
 from pymongo.collection import Collection
 
 from constants import DB, ZERODATE
@@ -41,11 +40,11 @@ class DBGuild:
         # returns a sorted list of user dictionaries
         return sorted(members, key=lambda doc: doc[field_key], reverse=is_reverse)
 
-    def delete_member(self, id):
-        if self.collection.count_documents({ "_id": bson.Int64(id) }, limit = 1) == 0:
+    def delete_member(self, name):
+        if self.collection.count_documents({ "name": name }, limit = 1) == 0:
             raise DocNotFoundError
 
-        self.collection.delete_one({"_id": bson.Int64(id)})
+        self.collection.delete_one({"name": name})
 
 class DBMember:
     def __init__(self, id, name, guild_collection: Collection):

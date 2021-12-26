@@ -1,5 +1,4 @@
 from discord.ext import commands
-import bson
 
 from helpers.db_models import DBGuild, DocNotFoundError
 from utils.mongo import vc_leave
@@ -38,20 +37,20 @@ class Admin(commands.Cog):
             await ctx.author.send("`data for this guild does not exist.`")
 
     @commands.command(hidden = True)
-    async def clearmember(self, ctx, *, id):
+    async def clearmember(self, ctx, *, name):
         try:
             db_guild = DBGuild(ctx.guild.id)
-            db_guild.delete_member(id)
+            db_guild.delete_member(name)
             await ctx.author.send(f"`all data for user_id: '{id}' in '{ctx.guild.name}' cleared.`")
         except DocNotFoundError:
             await ctx.author.send("`id does not exist in this guild.`")
 
     @commands.command(hidden=True)
-    async def fetchdoc(self, ctx, *, id):
+    async def fetchdoc(self, ctx, *, name):
         for guild_id in DB.list_collection_names():
             collection = DBGuild(guild_id)
             guild = self.bot.get_guild(int(collection.id))
-            for db_member in collection.get_all_members({"_id": bson.Int64(id)}):
+            for db_member in collection.get_all_members({"name": name}):
                 await ctx.author.send(embed=build_embed(
                     title=f"Document found (in {guild.name})",
                     desc=f"`{db_member.doc}`"
