@@ -3,7 +3,7 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import format_time_str, vc_join, vc_leave
+from utils.mongo import format_time_str, vc_join, vc_leave, dtstr_to_date
 from utils.displays import build_embed
 from constants import ZERODATE
 
@@ -53,13 +53,13 @@ class VCTracker(commands.Cog):
 
         if not db_member.is_new and db_member.get_value("firstjoined") != "":
             embed = build_embed(title=f":bar_chart: {ctx.author.name}'s stats ({ctx.guild.name})", thumb_url=ctx.author.avatar_url)
-            embed.set_footer(text=f"(taken since {format_time_str(db_member.get_value('firstjoined'), to_date=True)})")
+            embed.set_footer(text=f"(taken since {dtstr_to_date(db_member.get_value('firstjoined'))})")
             embed.add_field(name="Total Time in VC:", value=format_time_str(db_member.get_value("totalvctime")))
             embed.add_field(name="Longest Time Spent in VC:", value=format_time_str(db_member.get_value("longestvctime")))
             await ctx.reply(embed=embed)
         else:
             await ctx.reply(f"No VC activity detected from **{ctx.author.name}**.", hidden=True)
-    """
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not member.bot:
@@ -73,6 +73,6 @@ class VCTracker(commands.Cog):
             elif not after.channel and before.channel and not before.afk:
                 print(f"{member.name} leaves {member.guild.name}")
                 await vc_leave(db_member)
-"""
+
 def setup(bot):
     bot.add_cog(VCTracker(bot))

@@ -5,8 +5,8 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import background_task
-from utils.displays import str_to_date, build_embed
+from utils.mongo import background_task, dtstr_to_dt
+from utils.displays import build_embed
 from constants import TZ
 
 
@@ -16,7 +16,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.loop.create_task(background_task())
+        self.bot.loop.create_task(background_task(self.bot))
         
     @cog_ext.cog_slash(
         name="setbday",
@@ -29,8 +29,8 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def _setbday(self, ctx: SlashContext, year: int, month: int, day: int):
         date = f"{month}/{day}/{year}"
         try: #verfies user has sent a date
-            birthday_dt = str_to_date(date)
-
+            birthday_dt = dtstr_to_dt(date)
+    
             # date can't be in the future
             if datetime.now(TZ).replace(tzinfo=None) < birthday_dt:
                 raise ValueError

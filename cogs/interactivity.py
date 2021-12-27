@@ -19,12 +19,14 @@ class Interactivity(commands.Cog, name="interactivity"):
         options=[
             create_option(name="title", description="Your poll embed's title.", option_type=3, required=True),
             create_option(name="channel", description="The channel you want your poll embed to be posted in.",option_type=7, required=True),
-            create_option(name="image", description="A URL for an image.", option_type=3, required=False)
+            create_option(name="img_url", description="An image/media URL to put on your embed.", option_type=3, required=False)
         ])
-    async def _poll(self, ctx: SlashContext, title: str, channel: discord.channel, image: str = None):
+    async def _poll(self, ctx: SlashContext, title: str, channel: discord.channel, img_url: str = None):
         embed = build_embed(title=title)
         try:
-            embed.set_image(url=image)
+            if img_url:
+                embed.set_image(url=img_url)
+                
             if isinstance(channel, discord.TextChannel):
                 message = await channel.send(embed=embed)
                 await message.add_reaction("👍")
@@ -33,8 +35,7 @@ class Interactivity(commands.Cog, name="interactivity"):
             else:
                 await ctx.reply("Your channel must be a text channel.", hidden=True)
         except discord.errors.HTTPException:
-            await ctx.reply(f"'{image}' is not a valid URL.", hidden=True)
-            return
+            await ctx.reply(f"'{img_url}' is not a media URL.", hidden=True)
 
     @cog_ext.cog_slash(
         name="ytlink",
@@ -54,6 +55,7 @@ class Interactivity(commands.Cog, name="interactivity"):
             embed = build_embed(title=f"Download links for: {r['title']}", thumb_url=r["thumbnail"])
             embed.add_field(name=f"Download MP4:", value=f"[link here]({urls[-1]})")
             embed.add_field(name=f"Download Audio:", value=f"[link here]({urls[3]})")
+            await ctx.reply("Success! (Check your DMs.)", hidden=True)
             await ctx.author.send(embed=embed)
         else:
             await ctx.reply("Playlists are not allowed.", hidden=True)

@@ -41,7 +41,7 @@ class Admin(commands.Cog):
         try:
             db_guild = DBGuild(ctx.guild.id)
             db_guild.delete_member(name)
-            await ctx.author.send(f"`all data for user_id: '{id}' in '{ctx.guild.name}' cleared.`")
+            await ctx.author.send(f"`all data for '{name}' in '{ctx.guild.name}' has been cleared.`")
         except DocNotFoundError:
             await ctx.author.send("`id does not exist in this guild.`")
 
@@ -52,7 +52,7 @@ class Admin(commands.Cog):
             guild = self.bot.get_guild(int(collection.id))
             for db_member in collection.get_all_members({"name": name}):
                 await ctx.author.send(embed=build_embed(
-                    title=f"Document found (in {guild.name})",
+                    title=f"Document found in {guild.name}:",
                     desc=f"`{db_member.doc}`"
                 ))
 
