@@ -51,6 +51,50 @@ async def vc_leave(member: DBMember):
         member.update_field("totalvctime", str(dtstr_to_dt(member.get_value("totalvctime")) + duration))
         member.update_field("lastjoined")
 
+def daily_task(WHEN):
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            # make sure loop doesn't start after the target time as then
+            # it will immediately send the first time as negative seconds will make the sleep yield instantly
+            now = datetime.utcnow()
+            if now.time() > WHEN: 
+                tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
+                seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
+                print(f'({datetime.now(TZ).replace(tzinfo=None)}) waiting for UTC midnight ({seconds/3600} hours from now) before starting loop')
+
+                await asyncio.sleep(seconds) # sleep until tomorrow and then the start the loop
+
+            while True:
+                now = datetime.utcnow()
+                target_time = datetime.combine(now.date(), WHEN)
+                seconds_until_target = (target_time - now).total_seconds()
+                print(f'({datetime.now(TZ).replace(tzinfo=None)}) starting task in {seconds_until_target/3600} hours')
+                # Sleep until we hit the target time
+                await asyncio.sleep(seconds_until_target)  
+                
+                await func(*args, **kwargs) # the task
+
+                tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
+                seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
+                print(f"({datetime.now(TZ).replace(tzinfo=None)}) task completed, sleeping for {seconds/60} minutes")
+
+                # Sleep until tomorrow and then the loop will start a new iteration
+                await asyncio.sleep(seconds)
+        return wrapper
+    return decorator
+
+async def leave_all():
+    leavers = []
+    for id in DB.list_collection_names():
+        collection = DBGuild(id)
+        vcing_members = collection.get_all_members({"lastjoined": {"$ne": ""}})
+        for db_member in vcing_members:
+                await vc_leave(db_member)
+                leavers.append(db_member.name)
+    
+    return leavers
+
+@daily_task(time(8, 0, 0))
 async def check_bdays(bot):
     await bot.AppInfo.owner.send(f"({(datetime.now(TZ))}) running birthday check now.")
     for id in DB.list_collection_names():
@@ -71,33 +115,3 @@ async def check_bdays(bot):
                         ))
                     except AttributeError:
                         pass
-
-async def background_task(bot):
-    WHEN = time(8, 0, 0) # (IN UTC) when you want your task to run 
-
-    # make sure loop doesn't start after the target time as then
-    # it will immediately send the first time as negative seconds will make the sleep yield instantly
-    now = datetime.utcnow()
-    if now.time() > WHEN: 
-        tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
-        seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
-        print(f'({datetime.now(TZ).replace(tzinfo=None)}) waiting for UTC midnight ({seconds/3600} hours from now) before starting loop')
-
-        await asyncio.sleep(seconds) # sleep until tomorrow and then the start the loop
-
-    while True:
-        now = datetime.utcnow()
-        target_time = datetime.combine(now.date(), WHEN)
-        seconds_until_target = (target_time - now).total_seconds()
-        print(f'({datetime.now(TZ).replace(tzinfo=None)}) starting task in {seconds_until_target/3600} hours')
-        # Sleep until we hit the target time
-        await asyncio.sleep(seconds_until_target)  
-        
-        await check_bdays(bot) # the task
-
-        tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
-        seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
-        print(f"({datetime.now(TZ).replace(tzinfo=None)}) task completed, sleeping for {seconds/60} minutes")
-
-        # Sleep until tomorrow and then the loop will start a new iteration
-        await asyncio.sleep(seconds)

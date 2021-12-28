@@ -5,7 +5,7 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import background_task, dtstr_to_dt
+from utils.mongo import check_bdays, dtstr_to_dt
 from utils.displays import build_embed
 from constants import TZ
 
@@ -14,9 +14,10 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     def __init__(self, bot):
         self.bot = bot
     
+    # checks for birthdays every day
     @commands.Cog.listener()
     async def on_ready(self):
-        self.bot.loop.create_task(background_task(self.bot))
+        self.bot.loop.create_task(check_bdays(self.bot))
         
     @cog_ext.cog_slash(
         name="setbday",

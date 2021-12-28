@@ -3,14 +3,21 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import format_time_str, vc_join, vc_leave, dtstr_to_date
+from utils.mongo import format_time_str, vc_join, vc_leave, dtstr_to_date, leave_all, daily_task
 from utils.displays import build_embed
-from constants import ZERODATE
+from constants import ZERODATE, SLEEP_TIME
 
 
 class VCTracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+    
+    # since bot does not run 24/7, bot will automatically
+    # leave all users in preparation for the expected downtime
+    @commands.Cog.listener()
+    async def on_ready(self):
+        leave_all_task = daily_task(SLEEP_TIME)(leave_all)
+        self.bot.loop.create_task(leave_all_task())
 
     @cog_ext.cog_slash(
         name="vcrank",

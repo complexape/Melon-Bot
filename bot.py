@@ -31,5 +31,5 @@ if __name__ == "__main__":
                 exception = f"{type(e).__name__}: {e}"
                 print(f"Failed to load extension {extension}\n{exception}")
 
-# keep_alive()
+keep_alive()
 bot.run(os.getenv("bot_token"))

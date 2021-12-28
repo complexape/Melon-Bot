@@ -1,7 +1,7 @@
 from discord.ext import commands
 
 from helpers.db_models import DBGuild, DocNotFoundError
-from utils.mongo import vc_leave
+from utils.mongo import leave_all
 from utils.mongo import build_embed
 from constants import DB
 
@@ -16,13 +16,7 @@ class Admin(commands.Cog):
     # force leaves all users to prepare for any downtime
     @commands.command(hidden = True)
     async def forceleaveall(self, ctx):
-        leavers = []
-        for id in DB.list_collection_names():
-            collection = DBGuild(id)
-            vcing_members = collection.get_all_members({"lastjoined": {"$ne": ""}})
-            for db_member in vcing_members:
-                    await vc_leave(db_member)
-                    leavers.append(db_member.name)
+        leavers = await leave_all()
         await ctx.author.send(embed=build_embed(
             title="Bot can now be stopped.",
             desc=f"**{len(leavers)}** member(s) forced to leave: \n{leavers}",
