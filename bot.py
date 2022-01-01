@@ -29,4 +29,4 @@ if __name__ == "__main__":
                 exception = f"{type(e).__name__}: {e}"
                 print(f"Failed to load extension {extension}\n{exception}")
 
-bot.run("ODIyOTQwMTEwNjcxNzA4MTgw.YFZksw.SapdeUV5aVRmBdRfYJg0yMLVlCY")
+bot.run(os.getenv("bot_token"))
