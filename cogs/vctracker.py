@@ -3,21 +3,14 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import format_time_str, vc_join, vc_leave, dtstr_to_date, leave_all, daily_task
+from utils.mongo import format_time_str, vc_join, vc_leave, dtstr_to_date
 from utils.displays import build_embed
-from constants import ZERODATE, SLEEP_TIME
+from constants import ZERODATE
 
 
 class VCTracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
-    # since bot does not run 24/7, bot will automatically
-    # leave all users in preparation for the expected downtime
-    @commands.Cog.listener()
-    async def on_ready(self):
-        leave_all_task = daily_task(SLEEP_TIME)(leave_all)
-        self.bot.loop.create_task(leave_all_task())
 
     @cog_ext.cog_slash(
         name="vcrank",
@@ -55,8 +48,7 @@ class VCTracker(commands.Cog):
 
     @cog_ext.cog_slash(name="stats", description="Display your VC data for this guild.")
     async def _stats(self, ctx: SlashContext):
-        db_guild = DBGuild(ctx.author.guild.id)
-        db_member = DBMember(ctx.author_id, ctx.author.name, db_guild.collection)
+        db_member = DBMember.from_member(ctx.author)
 
         if not db_member.is_new and db_member.get_value("firstjoined") != "":
             embed = build_embed(title=f":bar_chart: {ctx.author.name}'s stats ({ctx.guild.name})", thumb_url=ctx.author.avatar_url)
@@ -70,8 +62,7 @@ class VCTracker(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not member.bot:
-            db_guild = DBGuild(member.guild.id)
-            db_member = DBMember(member.id, member.name, db_guild.collection)
+            db_member = DBMember.from_member(member)
 
             if not before.channel and after.channel and not after.afk:
                 print(f"{member.name} joins {member.guild.name}")

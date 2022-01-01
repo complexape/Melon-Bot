@@ -15,16 +15,15 @@ class DBGuild:
     def __init__(self, id: int):
         self.id = str(id)
         self.is_new = False
-        self.db = DB
         self.collection = self.initalize_guild()
     
     def initalize_guild(self):
         # creates creates guild collection if it doesn't already exist
-        if not self.id in self.db.list_collection_names():
+        if not self.id in DB.list_collection_names():
             self.is_new = True
-            self.db.create_collection(self.id)
+            DB.create_collection(self.id)
 
-        return self.db[self.id]
+        return DB[self.id]
     
     def get_all_members(self, projection={}):
         # gets all member docs in collection
@@ -62,6 +61,12 @@ class DBMember:
                 "birthday": ""
             }
         self.check_member()
+    
+    @classmethod
+    def from_member(cls, member):
+        guild = DBGuild(member.guild.id)
+        db_member = cls(member.id, member.name, guild.collection)
+        return db_member
     
     def check_member(self):
         # creates a new member document for the user's guild if doesn't already exist 

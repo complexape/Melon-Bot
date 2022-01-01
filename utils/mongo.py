@@ -4,7 +4,7 @@ import discord
 
 from helpers.db_models import DBGuild, DBMember
 from utils.displays import build_embed
-from constants import DB, TZ, ZERODATE
+from constants import BDAY_CHECK, DB, TZ, ZERODATE
 
 def dtstr_to_dt(string):
     try:
@@ -54,13 +54,14 @@ async def vc_leave(member: DBMember):
 def daily_task(WHEN):
     def decorator(func):
         async def wrapper(*args, **kwargs):
+            name = func.__name__
             # make sure loop doesn't start after the target time as then
             # it will immediately send the first time as negative seconds will make the sleep yield instantly
             now = datetime.utcnow()
             if now.time() > WHEN: 
                 tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
                 seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
-                print(f'({datetime.now(TZ).replace(tzinfo=None)}) waiting for UTC midnight ({seconds/3600} hours from now) before starting loop')
+                print(f'({datetime.now(TZ).time()})({name}) waiting for UTC midnight ({round(seconds/3600, 2)} hours from now) before starting loop')
 
                 await asyncio.sleep(seconds) # sleep until tomorrow and then the start the loop
 
@@ -68,7 +69,7 @@ def daily_task(WHEN):
                 now = datetime.utcnow()
                 target_time = datetime.combine(now.date(), WHEN)
                 seconds_until_target = (target_time - now).total_seconds()
-                print(f'({datetime.now(TZ).replace(tzinfo=None)}) starting task in {seconds_until_target/3600} hours')
+                print(f'({datetime.now(TZ).time()})({name}) starting task in {round(seconds_until_target/3600, 2)} hours')
                 # Sleep until we hit the target time
                 await asyncio.sleep(seconds_until_target)  
                 
@@ -76,7 +77,7 @@ def daily_task(WHEN):
 
                 tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
                 seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
-                print(f"({datetime.now(TZ).replace(tzinfo=None)}) task completed, sleeping for {seconds/60} minutes")
+                print(f"({datetime.now(TZ).time()})({name}) task completed, sleeping for {round(seconds/3600, 2)} hours")
 
                 # Sleep until tomorrow and then the loop will start a new iteration
                 await asyncio.sleep(seconds)
@@ -94,7 +95,7 @@ async def leave_all():
     
     return leavers
 
-@daily_task(time(8, 0, 0))
+@daily_task(BDAY_CHECK)
 async def check_bdays(bot):
     await bot.AppInfo.owner.send(f"({(datetime.now(TZ))}) running birthday check now.")
     for id in DB.list_collection_names():

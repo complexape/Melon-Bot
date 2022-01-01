@@ -4,8 +4,6 @@ import discord
 from discord.ext import commands
 from discord_slash import SlashCommand
 
-from keep_alive import keep_alive
-
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="m!")
 slash = SlashCommand(bot, sync_commands=True)
@@ -31,5 +29,4 @@ if __name__ == "__main__":
                 exception = f"{type(e).__name__}: {e}"
                 print(f"Failed to load extension {extension}\n{exception}")
 
-keep_alive()
-bot.run(os.getenv("bot_token"))
+bot.run("ODIyOTQwMTEwNjcxNzA4MTgw.YFZksw.SapdeUV5aVRmBdRfYJg0yMLVlCY")

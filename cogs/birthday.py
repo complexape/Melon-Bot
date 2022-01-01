@@ -39,9 +39,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
             await ctx.reply(f"'{date}' is not a valid date.", hidden=True)
             return
 
-        db_guild = DBGuild(ctx.guild_id)
-        db_member = DBMember(ctx.author_id, ctx.author.name, db_guild.collection)
-
+        db_member = DBMember.from_member(ctx.author)
         bday = db_member.get_value("birthday")
         if bday == "":
             db_member.update_field("birthday", date)
