@@ -1,4 +1,5 @@
 discord-py-slash-command==3.0.3
+discord-components==2.1.2
 discord.py==1.7.3
 pycord==0.1.1
 dnspython==2.1.0
