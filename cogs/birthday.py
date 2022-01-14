@@ -5,7 +5,7 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
 from helpers.db_models import DBGuild, DBMember
-from utils.mongo import check_bdays, dtstr_to_dt
+from utils.mongo import check_bdays
 from utils.displays import build_embed
 from constants import TZ
 
@@ -30,7 +30,7 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
     async def _setbday(self, ctx: SlashContext, year: int, month: int, day: int):
         date = f"{month}/{day}/{year}"
         try: #verfies user has sent a date
-            birthday_dt = dtstr_to_dt(date)
+            birthday_dt = datetime.strptime(date , "%m/%d/%Y")
     
             # date can't be in the future
             if datetime.now(TZ).replace(tzinfo=None) < birthday_dt:
@@ -39,9 +39,9 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
             await ctx.reply(f"'{date}' is not a valid date.", hidden=True)
             return
 
-        db_member = DBMember.from_member(ctx.author)
-        bday = db_member.get_value("birthday")
-        if bday == "":
+        db_member = DBMember.from_new(ctx.author)
+        bday = db_member.get("birthday")
+        if bday:
             db_member.update_field("birthday", date)
             await ctx.reply(f"Your birthday has successfully been set to: {date}", hidden=True)
         else: 
@@ -57,19 +57,19 @@ class BDayTracker(commands.Cog, name="BDay tracker"):
 
         description = ""
         for member in members:
-            date = member["birthday"]
-            if date != "":
-                birthday = datetime.strptime(date, '%m/%d/%Y')
+            birthday = DBMember.value_as_datetime(member["birthday"])
+            if birthday:
                 now = datetime.now(TZ).replace(tzinfo=None)
                 bday = datetime(now.year, birthday.month, birthday.day)
-                days_away = (bday - now.today()).days-1
+                days_away = (bday - now.today()).days
                 days_range = 14
                 if days_away in range(-364, -364 + days_range) or days_away in range(days_range):
-                    description += f"\n- **{member['name']}**'s birthday is on **{date}**)"
+                    description += f"\n- **{member['name']}**'s birthday is on **{birthday.date()}**"
 
         await ctx.reply(embed=build_embed(
             title=f":birthday: Upcoming Birthdays in '{ctx.guild.name}' :birthday:", 
-            desc=description
+            desc=description,
+            has_time=True
         ))
 
 def setup(bot):
