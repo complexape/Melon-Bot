@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-from helpers.db_models import DBGuild, DocNotFoundError
+from helpers.db_models import DBGuild
 from utils.mongo import leave_all
 from utils.mongo import build_embed
 from constants import DB
@@ -32,11 +32,12 @@ class Admin(commands.Cog):
 
     @commands.command(hidden = True)
     async def clearmember(self, ctx, *, name):
-        try:
-            db_guild = DBGuild(ctx.guild.id)
+        db_guild = DBGuild(ctx.guild.id)
+        
+        if db_guild.collection.find_one({"name": name}):
             db_guild.delete_member(name)
             await ctx.author.send(f"`all data for '{name}' in '{ctx.guild.name}' has been cleared.`")
-        except DocNotFoundError:
+        else:
             await ctx.author.send("`id does not exist in this guild.`")
 
     @commands.command(hidden=True)
