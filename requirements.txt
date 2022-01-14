@@ -1,9 +1,11 @@
-discord-py-slash-command==3.0.1
+discord-py-slash-command==3.0.3
 discord.py==1.7.3
 pycord==0.1.1
 dnspython==2.1.0
-pymongo==3.12.0
+pymongo==4.0.1
 pytz==2021.1
 requests==2.25.1
 youtube-dl==2021.6.6
-Pillow==8.3.2
+Pillow==9.0.0
+buttons==0.1.9
+disputils==0.2.0
