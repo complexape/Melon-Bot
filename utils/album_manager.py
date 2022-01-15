@@ -1,9 +1,8 @@
 from bson.objectid import ObjectId
-from discord.ext.commands.help import Paginator
 from discord_slash.context import MenuContext, SlashContext
 import discord
 from discord.ext import commands
-from ButtonPaginator import Paginator
+from dinteractions_Paginator import Paginator
 
 class InvalidUsageError(commands.CommandError):
     pass
@@ -67,4 +66,4 @@ async def display_post(
             else:
                 await ctx.reply(embeds=embeds, hidden=hidden)
         else:
-            await Paginator(bot=bot, ctx=ctx, embeds=embeds, timeout=100).start()
+            await Paginator(bot=bot, ctx=ctx, pages=embeds, timeout=100).run()
