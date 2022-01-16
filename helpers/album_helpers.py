@@ -6,7 +6,7 @@ from discord.utils import get
 from discord_slash import SlashContext
 from disputils import BotEmbedPaginator
 
-from utils.album_manager import InvalidUsageError, CommandCancelled, display_post
+from utils.album_manager import InvalidUsageError, CommandCancelled, display_post, wait_for_msg
 
 from constants import TZ, ALBUM_DB
 
@@ -125,10 +125,8 @@ class BotSearchPaginator(BotEmbedPaginator):
     
 
     async def wait_for_response(self):
-        def check(msg):
-            return msg.author.id == self._ctx.author_id and msg.channel.id == self._ctx.channel_id
         async def msg_wait_task(self):
-            msg = await self._ctx.bot.wait_for("message", check=check)
+            msg = await wait_for_msg(self._ctx)
             await self.quit()
             return msg
 
@@ -147,7 +145,7 @@ class BotSearchPaginator(BotEmbedPaginator):
         else:
             result_embed = await self._ctx.send(embed=self.pages[0])
             try:
-                response = await self._ctx.bot.wait_for("message", timeout=120.0, check=check)
+                response = await wait_for_msg(self._ctx, timeout=120.0)
             except asyncio.TimeoutError:
                 raise CommandCancelled
             await result_embed.delete()

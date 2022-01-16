@@ -7,7 +7,7 @@ from discord_slash.utils.manage_commands import create_option, create_choice
 import pymongo
 
 from helpers.album_helpers import BotSearchPaginator, GuildAlbum
-from utils.album_manager import display_post, retrieve_post, InvalidUsageError, CommandCancelled
+from utils.album_manager import display_post, retrieve_post, InvalidUsageError, CommandCancelled, wait_for_msg
 
 from constants import VALID_TYPES
 
@@ -55,27 +55,34 @@ class Images(commands.Cog, name="images"):
 
         await ctx.send(
             embed=discord.Embed(
-                title =f"Please respond here with your attachments for __**'{name}'**__.",
+                title =f"Please respond here with your **attachments** and/or **discord message links** containg attachments. (sep. by spaces (' '))",
                 colour=discord.Colour.red(), 
                 description=f"A response without attachments will cancel the post.\nValid file types: {', '.join(VALID_TYPES)}"), 
-        hidden=True)
+                hidden=True)
 
-        def check(msg):
-            return msg.author.id == ctx.author_id and msg.channel.id == ctx.channel_id
+        resp = await wait_for_msg(ctx)
+        attachments = resp.attachments
 
-        resp = await self.bot.wait_for("message", check=check)
+        for link in resp.content.split(" "):
+            if "https://discord.com/channels/" in link:
+                ids = link.split('/')
+                channel = ctx.guild.get_channel(int(ids[5]))
+                if channel:
+                    message = await channel.fetch_message(int(ids[6]))
+                    if message and len(attachments) <= 20:
+                        attachments.extend(message.attachments)
 
         try:
-            if not resp.attachments:
-                raise InvalidUsageError("No attachments found, nothing posted. (Did you send links instead of attachments?)")
+            if len(attachments) == 0:
+                raise InvalidUsageError("No attachments found, nothing posted. (Did you send file urls instead of attachments?)")
 
-             # verifies that each file's content type is either an image, video, or audio
-            elif not all([any(map(a.content_type.__contains__ or [], VALID_TYPES)) for a in resp.attachments]):
+            # verifies that each file's content type is either an image, video, or audio
+            elif not all([any(map(a.content_type.__contains__ or [], VALID_TYPES)) for a in attachments]):
                 raise InvalidUsageError(f"Your post can only contain **{', '.join(VALID_TYPES)}** files.")
 
             else:
                 await ctx.reply("Adding your files...", hidden=True)
-                attachments_msg = await ctx.author.send(files=[await a.to_file(spoiler=is_nsfw) for a in resp.attachments])
+                attachments_msg = await ctx.author.send(files=[await a.to_file() for a in attachments])
                 await resp.delete()
 
                 document = await album.create_post(attachments_msg.attachments, name, tags,

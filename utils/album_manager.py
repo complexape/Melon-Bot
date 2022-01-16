@@ -22,6 +22,13 @@ def retrieve_post(ctx: MenuContext, album):
 
         return post, id
 
+async def wait_for_msg(ctx: SlashContext, timeout = None):
+    def check(msg):
+        return msg.author.id == ctx.author_id and msg.channel.id == ctx.channel_id
+
+    msg = await ctx.bot.wait_for("message", check=check, timeout=timeout)
+    return msg
+
 async def display_post(
     bot: commands.Bot, ctx: SlashContext, post_document, 
     channel: discord.TextChannel = None, hidden = False, no_pagination = False, 

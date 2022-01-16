@@ -12,5 +12,5 @@ BDAY_CHECK = time(8, 0, 0) # Checks for birthdays at 8AM UTC (12AM PST)
 ZEROSTR = "1900-01-01 00:00:00.01"
 ZERODATE = datetime.strptime(ZEROSTR , "%Y-%m-%d %H:%M:%S.%f")
 
-VALID_TYPES = ("image", "video", "audio")
+VALID_TYPES = ("image", "video", "audio", "gif")
 ALBUM_DB = DBCLIENT["archivedb"]
