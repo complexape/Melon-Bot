@@ -125,7 +125,7 @@ class BotSearchPaginator(BotEmbedPaginator):
     
 
     async def wait_for_response(self):
-        async def msg_wait_task(self):
+        async def msg_wait_task():
             msg = await wait_for_msg(self._ctx)
             await self.quit()
             return msg
